@@ -67,6 +67,28 @@ class Scheduler:
 
     def show_gantt(self):
         print(self.gantt)
+    
+    def avg_wt(self):
+        """
+            returns the average waiting time of processed jobs
+        """
+        total = 0
+        n_jobs = len(self.jobs)
+        for job in self.jobs:
+            if job.rt == 0:
+                total += job.wt
+        return total / n_jobs
+    
+    def avg_tat(self):
+        """
+            returns the average turn-around time of processed jobs
+        """
+        total = 0
+        n_jobs = len(self.jobs)
+        for job in self.jobs:
+            if job.rt == 0:
+                total += job.tat
+        return total / n_jobs
 
 class FCFS(Scheduler):
     """
@@ -87,7 +109,24 @@ class FCFS(Scheduler):
 
             self.complete_job(job)
             self.update_gantt(job.id, start, end)
-            
+
+class SJF(Scheduler):
+    """
+        Shortest Job First
+    """
+    def __init__(self, jobs, preempt=False):
+        super().__init__(jobs)
+        self.preempt = preempt
+    
+    def start(self):
+        # sort jobs based on their burst time
+        self.jobs = sorted(self.jobs, key=lambda job:job.bt)
+
+        for job in self.jobs:
+            start = self.timer
+            while job.rt > 0:
+                self.process_job(job)
+
 
             
             
