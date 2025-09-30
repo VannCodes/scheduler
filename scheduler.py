@@ -42,21 +42,16 @@ class Scheduler:
     def __init__(self, jobs):
         # sort jobs based on their arrival time
         self.jobs = sorted(copy.deepcopy(jobs), key=lambda job:job.at)
+        self.n_jobs = len(self.jobs)
         self.timer = 0
         self.completed = []
         self.ready = []
         self.gantt = []
 
     def lookup_ready(self):
-        to_remove = []
-        for job in self.jobs:
-            # exit loop if arrival is greater than current time
-            if self.timer < job.at:
-                break
-            # process arrived
+        to_move = [job for job in self.jobs if job.at <= self.timer]
+        for job in to_move:
             self.ready.append(job)
-            self.to_remove.append(job)
-        for job in to_remove:
             self.jobs.remove(job)
 
     def process_job(self, job):
@@ -116,7 +111,7 @@ class FCFS(Scheduler):
         super().__init__(jobs)
 
     def start(self):
-        while self.jobs: # while not empty
+        while len(self.completed) != self.n_jobs: # while not empty
             self.lookup_ready()
 
             if not self.ready: # no jobs are ready
@@ -145,11 +140,10 @@ class SJF(Scheduler):
 
         # Non-Preemptive (default)
         i=1
-        while self.jobs: # while not empty
+        while len(self.completed) != self.n_jobs: # while not empty
             self.lookup_ready()
             for job in self.ready:
                 print(f"{i} run: {job.id}, {job.bt}")
-
 
             if not self.ready: # no jobs are ready
                 self.timer += 1
