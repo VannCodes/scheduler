@@ -1,4 +1,5 @@
 import time
+import copy
 
 class Job:
     """
@@ -26,9 +27,9 @@ class Job:
         print(f"""
             Burst Time: {self.bt}
             Arrival Time: {self.at}
-            Completion Time: {"Processing..." if self.ct is None else self.ct}
-            Turn-Around Time: {"Processing..." if self.tat is None else self.tat}
-            Waiting Time: {"Processing..." if self.wt is None else self.wt}     
+            Completion Time: {self.ct}
+            Turn-Around Time: {self.tat}
+            Waiting Time: {self.wt}     
               """, end="")
         if self.priority != 0:
             print(f"Priority: {self.priority}", end="")
@@ -39,9 +40,24 @@ class Scheduler:
         Parent class of scheduling algorithms
     """
     def __init__(self, jobs):
-        self.jobs = jobs
+        # sort jobs based on their arrival time
+        self.jobs = sorted(copy.deepcopy(jobs), key=lambda job:job.at)
         self.timer = 0
+        self.completed = []
+        self.ready = []
         self.gantt = []
+
+    def lookup_ready(self):
+        to_remove = []
+        for job in self.jobs:
+            # exit loop if arrival is greater than current time
+            if self.timer < job.at:
+                break
+            # process arrived
+            self.ready.append(job)
+            self.to_remove.append(job)
+        for job in to_remove:
+            self.jobs.remove(job)
 
     def process_job(self, job):
         #time.sleep(1) # simulate time passing by 1 sec
@@ -53,9 +69,12 @@ class Scheduler:
         job.ct = self.timer
         job.tat = job.ct - job.at
         job.wt = job.tat - job.bt
+
+        self.completed.append(job)
     
     def list_jobs(self):
-        for job in self.jobs:
+        # list job statuses
+        for job in self.completed:
             print(f"Job [{job.id}]:", end="")
             job.show_attrs()
     
@@ -73,10 +92,9 @@ class Scheduler:
             returns the average waiting time of processed jobs
         """
         total = 0
-        n_jobs = len(self.jobs)
-        for job in self.jobs:
-            if job.rt == 0:
-                total += job.wt
+        n_jobs = len(self.completed)
+        for job in self.completed:
+            total += job.wt
         return total / n_jobs
     
     def avg_tat(self):
@@ -84,8 +102,8 @@ class Scheduler:
             returns the average turn-around time of processed jobs
         """
         total = 0
-        n_jobs = len(self.jobs)
-        for job in self.jobs:
+        n_jobs = len(self.completed)
+        for job in self.completed:
             if job.rt == 0:
                 total += job.tat
         return total / n_jobs
@@ -98,11 +116,16 @@ class FCFS(Scheduler):
         super().__init__(jobs)
 
     def start(self):
-        # sort jobs based on their arrival time
-        self.jobs = sorted(self.jobs, key=lambda job:job.at)
+        while self.jobs: # while not empty
+            self.lookup_ready()
 
-        for job in self.jobs:
+            if not self.ready: # no jobs are ready
+                self.timer += 1
+                continue
+
+            job = self.ready.pop(0)
             start = self.timer
+
             while job.rt > 0: # keep processing the job until completion
                 self.process_job(job)
             end = self.timer
@@ -117,16 +140,34 @@ class SJF(Scheduler):
     def __init__(self, jobs, preempt=False):
         super().__init__(jobs)
         self.preempt = preempt
-    
+
     def start(self):
-        # sort jobs based on their burst time
-        self.jobs = sorted(self.jobs, key=lambda job:job.bt)
 
-        for job in self.jobs:
+        # Non-Preemptive (default)
+        i=1
+        while self.jobs: # while not empty
+            self.lookup_ready()
+            for job in self.ready:
+                print(f"{i} run: {job.id}, {job.bt}")
+
+
+            if not self.ready: # no jobs are ready
+                self.timer += 1
+                continue
+
+            job = min(self.ready, key=lambda x: x.bt)
+            self.ready.remove(job)
             start = self.timer
-            while job.rt > 0:
-                self.process_job(job)
 
+            while job.rt > 0: # keep processing the job until completion
+                self.process_job(job)
+            end = self.timer
+
+            self.complete_job(job)
+            self.update_gantt(job.id, start, end)
+            i+=1
+            
+            
 
             
             
