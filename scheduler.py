@@ -139,11 +139,8 @@ class SJF(Scheduler):
     def start(self):
 
         # Non-Preemptive (default)
-        i=1
         while len(self.completed) != self.n_jobs: # while not empty
             self.lookup_ready()
-            for job in self.ready:
-                print(f"{i} run: {job.id}, {job.bt}")
 
             if not self.ready: # no jobs are ready
                 self.timer += 1
@@ -159,7 +156,6 @@ class SJF(Scheduler):
 
             self.complete_job(job)
             self.update_gantt(job.id, start, end)
-            i+=1
             
             
 
