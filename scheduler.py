@@ -32,7 +32,7 @@ class Job:
             Waiting Time: {self.wt}     
               """, end="")
         if self.priority != 0:
-            print(f"Priority: {self.priority}", end="")
+            print(f"\tPriority: {self.priority}", end="")
         print("") 
 
 class Scheduler:
@@ -169,11 +169,51 @@ class SJF(Scheduler):
                 self.complete_job(job)
     
     def shortest_job(self):
-            return min(self.ready, key=lambda x: x.rt)
+        return min(self.ready, key=lambda job: job.rt)
 
+class Priority(Scheduler):
+    """
+        Priority Scheduling
+        Note: When jobs have the same priority, FCFS is used for tie-breaker
+    """            
+    def __init__(self, jobs, preempt=False):
+        super().__init__(jobs)
+        self.preempt = preempt
 
-            
-            
+    def start(self):
+        while len(self.completed) != self.n_jobs:
+            self.lookup_ready() # check for ready jobs
 
+            if not self.ready: # no jobs are ready
+                self.timer += 1
+                continue
 
-            
+            job = self.priority_job()
+            self.ready.remove(job)
+            start = self.timer
+
+            if self.preempt:
+                # Preemptive
+                while job.rt > 0: # keep checking if there are higher priority jobs
+                    self.process_job(job)
+                    self.lookup_ready()
+                    
+                    if self.ready:
+                        highest = self.priority_job()
+                        if highest.priority > job.priority:
+                            self.ready.insert(0, job) # store unfinished job, place in front of queue for fcfs
+                            break
+            else:
+                # Non-Preemptive
+                while job.rt > 0: # keep processing the job until completion
+                    self.process_job(job)
+            end = self.timer
+
+            self.update_gantt(job.id, start, end)
+            if job.rt <= 0:
+                self.complete_job(job)
+    
+    def priority_job(self):
+        return max(self.ready, key=lambda job: job.priority)
+
+    
