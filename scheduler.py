@@ -99,8 +99,7 @@ class Scheduler:
         total = 0
         n_jobs = len(self.completed)
         for job in self.completed:
-            if job.rt == 0:
-                total += job.tat
+            total += job.tat
         return total / n_jobs
 
 class FCFS(Scheduler):
@@ -137,27 +136,41 @@ class SJF(Scheduler):
         self.preempt = preempt
 
     def start(self):
-
-        # Non-Preemptive (default)
-        while len(self.completed) != self.n_jobs: # while not empty
-            self.lookup_ready()
+        while len(self.completed) != self.n_jobs:
+            self.lookup_ready() # check for ready jobs
 
             if not self.ready: # no jobs are ready
                 self.timer += 1
                 continue
 
-            job = min(self.ready, key=lambda x: x.bt)
+            job = self.shortest_job()
             self.ready.remove(job)
             start = self.timer
 
-            while job.rt > 0: # keep processing the job until completion
-                self.process_job(job)
+            if self.preempt:
+                # Preemptive
+                while job.rt > 0: # keep checking if there are shorter jobs
+                    self.process_job(job)
+                    self.lookup_ready()
+                    
+                    if self.ready:
+                        shortest = self.shortest_job()
+                        if shortest.rt < job.rt:
+                            self.ready.append(job) # store unfinished job
+                            break
+            else:
+                # Non-Preemptive
+                while job.rt > 0: # keep processing the job until completion
+                    self.process_job(job)
             end = self.timer
 
-            self.complete_job(job)
             self.update_gantt(job.id, start, end)
-            
-            
+            if job.rt <= 0:
+                self.complete_job(job)
+    
+    def shortest_job(self):
+            return min(self.ready, key=lambda x: x.rt)
+
 
             
             
