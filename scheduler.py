@@ -80,7 +80,9 @@ class Scheduler:
                             })
 
     def show_gantt(self):
-        print(self.gantt)
+        for entry in self.gantt:
+            print(f"Job [{entry['id']}]: Start Time = {entry['start']}, End Time = {entry['end']}")
+
     
     def avg_wt(self):
         """
@@ -215,5 +217,36 @@ class Priority(Scheduler):
     
     def priority_job(self):
         return max(self.ready, key=lambda job: job.priority)
-
     
+class RoundRobin(Scheduler):
+    """
+        Round Robin Scheduling
+        Preemptive only
+    """
+    def __init__(self, jobs, t_quantum=2):
+        super().__init__(jobs)
+        self.t_quantum = t_quantum
+
+    def start(self):
+        while len(self.completed) != self.n_jobs:
+            before_swap = self.t_quantum
+            self.lookup_ready() # check for ready jobs
+
+            if not self.ready: # no jobs are ready
+                self.timer += 1
+                continue
+
+            job = self.ready.pop(0)
+            start = self.timer
+
+            while job.rt > 0 and before_swap > 0:
+                self.process_job(job)
+                before_swap -= 1
+            end = self.timer
+
+            if job.rt > 0:
+                self.ready.append(job) # append incomplete job
+            else:
+                self.complete_job(job)
+            self.update_gantt(job.id, start, end)
+            
