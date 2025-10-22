@@ -1,4 +1,3 @@
-import time
 import copy
 
 class Job:
@@ -55,7 +54,6 @@ class Scheduler:
             self.jobs.remove(job)
 
     def process_job(self, job):
-        #time.sleep(1) # simulate time passing by 1 sec
         job.rt -= 1
         self.timer += 1
 
