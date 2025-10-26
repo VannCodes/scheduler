@@ -243,7 +243,7 @@ class RoundRobin(Scheduler):
             end = self.timer
 
             if job.rt > 0:
-                self.ready.append(job) # append incomplete job
+                self.jobs.append(job) # append incomplete job
             else:
                 self.complete_job(job)
             self.update_gantt(job.id, start, end)
