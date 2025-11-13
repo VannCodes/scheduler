@@ -2,11 +2,6 @@
 
 A JavaFX desktop application for visualizing CPU scheduling algorithms with a Python FastAPI backend.
 
-## Project Structure
-
-- **Frontend**: `cpu-scheduler-app/` - JavaFX application (Java 17)
-- **Backend**: `CPU_SCHEDULER/` - FastAPI server (Python)
-
 ## Prerequisites
 
 ### For Backend (Python)
@@ -108,4 +103,5 @@ java --module-path <path-to-javafx> --add-modules javafx.controls,javafx.fxml -j
 ```
 
 Note: You may need to include JavaFX modules separately if using Java 11+ without bundled JavaFX.
+
 
