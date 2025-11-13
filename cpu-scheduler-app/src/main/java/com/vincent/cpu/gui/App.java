@@ -8,7 +8,7 @@ public class App extends Application {
     @Override
     public void start(Stage primaryStage) {
         MainView mainView = new MainView();
-        Scene scene = new Scene(mainView, 1000, 800);
+        Scene scene = new Scene(mainView, 1100, 900);
         
         // Apply modern CSS styling - try to load from resources, fallback to inline if not found
         try {

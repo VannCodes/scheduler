@@ -16,6 +16,7 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextInputDialog;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
@@ -48,16 +49,43 @@ public class MainView extends BorderPane {
         ganttLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #2c3e50; -fx-padding: 5 0 5 0;");
         calcLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #2c3e50; -fx-padding: 5 0 5 0;");
         
-        VBox bottomBox = new VBox(15,
+        // Create a container for the average label to make it more prominent
+        VBox avgContainer = new VBox(8);
+        Label avgTitle = new Label("Summary:");
+        avgTitle.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+        avgContainer.getChildren().addAll(avgTitle, avgLabel);
+        avgContainer.setPadding(new Insets(15, 20, 15, 20));
+        avgContainer.setStyle("-fx-background-color: rgba(255,255,255,0.95); -fx-background-radius: 10px; -fx-effect: dropshadow(one-pass-box, rgba(0,0,0,0.15), 5, 0, 0, 2);");
+        avgContainer.setMinHeight(80); // Ensure it has minimum height
+        
+        VBox bottomBox = new VBox(12,
             createActionBar(),
             ganttLabel,
             ganttChart,
             calcLabel,
             resultTable,
-            avgLabel
+            avgContainer
         );
-        bottomBox.setPadding(new Insets(15, 0, 0, 0));
-        setBottom(bottomBox);
+        bottomBox.setPadding(new Insets(15, 0, 20, 0));
+        
+        // Wrap bottomBox in a ScrollPane to enable scrolling
+        ScrollPane scrollPane = new ScrollPane(bottomBox);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setFitToHeight(false);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+        scrollPane.setPadding(new Insets(0));
+        scrollPane.setPrefViewportHeight(350); // Set preferred viewport height to enable scrolling
+        scrollPane.setMinViewportHeight(300); // Minimum height
+        scrollPane.setPrefHeight(350); // Preferred height for the ScrollPane itself
+        scrollPane.setMaxHeight(500); // Maximum height before scrolling is needed
+        
+        setBottom(scrollPane);
+        
+        // Ensure avgLabel is visible and properly styled
+        avgLabel.setText("No results yet. Click Run to see averages."); // Initialize with placeholder text
+        System.out.println("avgLabel initialized, visible: " + avgLabel.isVisible());
 
         runBtn.setOnAction(e -> onRunClicked());
         runBtn.getStyleClass().add("run-button");
@@ -68,8 +96,13 @@ public class MainView extends BorderPane {
     }
     
     private void applyModernStyling() {
-        // Style labels
-        avgLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #2c3e50; -fx-padding: 10 0 10 0;");
+        // Style labels - make it very visible
+        avgLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #2c3e50; -fx-padding: 5 0 5 0;");
+        avgLabel.setWrapText(true); // Allow text to wrap if needed
+        avgLabel.setMaxWidth(Double.MAX_VALUE); // Allow full width
+        avgLabel.setMinHeight(40); // Ensure minimum height
+        avgLabel.setVisible(true); // Make sure it's visible
+        avgLabel.setManaged(true); // Ensure it's managed by layout
     }
 
     private HBox createToolbar() {
@@ -95,7 +128,7 @@ public class MainView extends BorderPane {
     private void clearResults() {
         ganttChart.setEntries(null);
         resultTable.setItems(FXCollections.observableArrayList());
-        avgLabel.setText("");
+        avgLabel.setText("No results yet. Click Run to see averages.");
     }
     
     private void clearProcessTable() {
@@ -251,7 +284,13 @@ public class MainView extends BorderPane {
                 javafx.application.Platform.runLater(() -> {
                     ganttChart.setEntries(resp.gantt);
                     resultTable.setItems(FXCollections.observableList(resp.jobs));
-                    avgLabel.setText(String.format("Average TAT: %.2f     Average WT: %.2f", resp.avg_tat, resp.avg_wt));
+                    double avgCombined = (resp.avg_tat + resp.avg_wt) / 2.0;
+                    String labelText = String.format("Average TAT: %.2f  |  Average WT: %.2f  |  Average (TAT+WT)/2: %.2f", 
+                        resp.avg_tat, resp.avg_wt, avgCombined);
+                    avgLabel.setText(labelText);
+                    avgLabel.setVisible(true);
+                    System.out.println("Setting avgLabel text: " + labelText); // Debug
+                    System.out.println("avgLabel visible: " + avgLabel.isVisible() + ", text: " + avgLabel.getText());
                 });
             } catch (Exception ex) {
                 javafx.application.Platform.runLater(() -> {
